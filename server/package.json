@@ -6,7 +6,6 @@
     "express": "^4.16.4",
     "express-formidable": "^1.2.0",
     "nodemon": "^1.18.10",
-    "request": "^2.88.0",
     "ws": "^6.2.0"
   },
   "name": "express",

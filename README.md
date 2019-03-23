@@ -1,3 +1,5 @@
-## Add style to your image using machine learning
+## Stylize images using machine learning
 
 Utilizing this program: https://github.com/fritzlabs/fritz-models/tree/master/style_transfer
+
+![preview](preview.png)

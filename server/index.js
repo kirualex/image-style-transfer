@@ -87,7 +87,7 @@ app.post("/image", async (req, res) => {
       if (client.readyState === WebSocket.OPEN) {
         client.send(JSON.stringify(uploadSuccessEvent))
       }
-      }
+    }
   } catch (e) {
     const errorEvent = {
       type: "STLIZE_ERROR",

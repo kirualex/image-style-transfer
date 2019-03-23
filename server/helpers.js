@@ -1,22 +1,21 @@
 const fs = require("fs")
 const path = require("path")
-const request = require("request")
 const spawn = require("child_process").spawn
 const { Storage } = require("@google-cloud/storage")
 const { Datastore } = require("@google-cloud/datastore")
 
 const { ws } = require("./ws")
 
-const projectPath = "/home/smappa/code/event-thing"
 const bucketName = process.env.GCP_BUCKET_NAME
 const projectId = process.env.GCP_PROJECT_ID
-const keyFilePath = `${projectPath}/style_transfer/express/general-czar-keyfile.json`
+const keyFilePath = path.resolve(process.cwd(), 'general-czar-keyfile.json')
 
-const stylizeScriptPath = `${projectPath}/style_transfer/stylize_image.py`
+const styleTransferPath = path.resolve(process.cwd(), 'style_transfer')
 
-const expressImagePath = `${projectPath}/style_transfer/express`
-const inputImagePath = `${projectPath}/style_transfer/example`
-const outputImagePath = `${projectPath}/style_transfer/output`
+const stylizeScriptPath = path.resolve(styleTransferPath, 'stylize_image.py')
+
+const inputImagePath = path.resolve(styleTransferPath, 'example')
+const outputImagePath = path.resolve(styleTransferPath, 'output')
 
 const gcpOptions = {
   projectId,
@@ -25,9 +24,10 @@ const gcpOptions = {
 
 function getModelPath(filename) {
   if (!filename) {
-    return `${projectPath}/style_transfer/example/starry_night.h5` 
+    console.warn('getModelPath: no model specified, using starry_night by default')
+    return path.resolve(styleTransferPath, 'example', 'starry_night.h5')
   }
-  return `${projectPath}/style_transfer/example/${filename}`
+  return path.resolve(styleTransferPath, 'example', filename)
 }
 
 function getFilename(file) {
@@ -74,7 +74,7 @@ async function findStyleModelById(modelId) {
 }
 
 function getTempModelPath(modelId) {
-  return `${projectPath}/style_transfer/express/temp/${modelId}.h5`
+  return path.resolve(process.cwd(), 'temp', `${modelId}.h5`)
 }
 
 async function downloadModel(modelId) {
@@ -96,9 +96,9 @@ function stylizeImage(file, modelId) {
     const filePath = file.path
     const fileName = getFilename(file)
     const fileExt = getFileExtension(file)
-    const inputFilePath = `${expressImagePath}/${filePath}`
+    const inputFilePath = `${process.cwd()}/${filePath}`
     const outputFileNameWithExt = `${fileName}_output.${fileExt}`
-    const outputFilePath = `${inputImagePath}/${outputFileNameWithExt}`
+    const outputFilePath = `${outputImagePath}/${outputFileNameWithExt}`
 
     const modelPath = getTempModelPath(modelId)
     fs.exists(modelPath, async exists => {

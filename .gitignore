@@ -1,7 +1,10 @@
 node_modules
 general-czar-keyfile.json
-style_transfer/data
+server/style_transfer/data
+server/style_transfer/dist
+server/style_transfer/example
+server/style_transfer/output
+server/style_transfer/val2017.zip
 val2017*
-style_transfer/dist
-style_transfer/express/temp
-style_transfer/example
+server/temp
+.env
