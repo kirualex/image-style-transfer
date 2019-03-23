@@ -1,6 +1,7 @@
+import React from 'react'
 import { observable, action, decorate } from 'mobx'
 
-export class ImageStore {
+class ImageStore {
   uploadedImageURL = ''
 
   setUploadedImage(imageURL) {
@@ -12,3 +13,7 @@ decorate(ImageStore, {
   uploadedImageURL: observable,
   setUploadedImage: action.bound
 })
+
+const imageStore = new ImageStore()
+
+export const ImageStoreContext = React.createContext(imageStore)

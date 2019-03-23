@@ -181,18 +181,4 @@ async function uploadImage(fileName, filePath) {
   return getFileURL(bucketImageName, modelName)
 }
 
-async function getStylingModels() {
-  const dataStore = new Datastore(gcpOptions)
-  const query = dataStore.createQuery('StyleModel')
-  const [models] = await dataStore.runQuery(query)
-  
-  return models.map(model => {
-    return {
-      id: model[dataStore.KEY].id,
-      name: model.name,
-      imageSrc: getSourceImageURL(model.imageFilename)
-    }
-  })
-}
-
-module.exports = { uploadImage, stylizeImage, getStylingModels }
+module.exports = { uploadImage, stylizeImage, getSourceImageURL }

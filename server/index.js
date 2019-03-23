@@ -1,12 +1,14 @@
-require('./setupEnvironment')
+require("./setupEnvironment")
+const http = require("http")
 const express = require("express")
 const cors = require("cors")
 const formidable = require("express-formidable")
-const bodyParser = require('body-parser')
+const bodyParser = require("body-parser")
 
 const { stylizeImage, uploadImage, getStylingModels } = require("./helpers")
 const WebSocket = require("ws")
 const { ws } = require("./ws")
+const { createGraphQLServer } = require("./graphql")
 
 const PORT = 3001
 
@@ -23,14 +25,6 @@ app.use(
   })
 )
 
-app.get("/stylemodels", async (req, res) => {
-  // TODO: save models somewhere.
-  // Including the source image and the actual model.
-  // Or maybe just source image, model name and file name.
-  const models = await getStylingModels()
-  res.status(200).json(JSON.stringify(models))
-})
-
 // need an ID from client so events can be sent to the correct websocket
 app.post("/image", async (req, res) => {
   const { files, fields } = req
@@ -39,7 +33,6 @@ app.post("/image", async (req, res) => {
   const { file } = files
   const filePath = file.path
   const fileName = file.name
-
 
   let client
   ws.clients.forEach(c => {
@@ -56,8 +49,6 @@ app.post("/image", async (req, res) => {
   }
 
   client.send(JSON.stringify(event))
-
-  // const { model } = body
 
   try {
     const result = await stylizeImage(file, modelId)
@@ -100,4 +91,10 @@ app.post("/image", async (req, res) => {
   }
 })
 
-app.listen(PORT, () => console.log(`App listening on ${PORT}`))
+const httpServer = http.createServer(app)
+const apolloServer = createGraphQLServer(app, httpServer)
+
+httpServer.listen(PORT, () => {
+  console.log("Express listening on port 4001")
+  console.log(`Apollo Server listening on port 4001 ${apolloServer.graphqlPath}`)
+})
