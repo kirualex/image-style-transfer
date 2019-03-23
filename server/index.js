@@ -5,7 +5,7 @@ const cors = require("cors")
 const formidable = require("express-formidable")
 const bodyParser = require("body-parser")
 
-const { stylizeImage, uploadImage, getStylingModels } = require("./helpers")
+const { stylizeImage, uploadImage } = require("./models/style")
 const { createGraphQLServer } = require("./graphql")
 const { pubsub } = require("./graphql/pubsub")
 const events = require('./events')
@@ -60,7 +60,7 @@ app.post("/image", async (req, res) => {
     pubsub.publish("styleTransferEvent", {
       styleTransferEvent: {
         name: events.STYLIZE_ERROR,
-        message: eerr.message
+        message: err.message
       }
     })
   }

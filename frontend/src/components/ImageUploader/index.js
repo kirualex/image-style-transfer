@@ -95,7 +95,7 @@ function ImageUploader(props) {
             {({ data }) => (
               <div>
                 <StyleModelSelector
-                  styleModels={data.styleModels || []}
+                  styleModels={(data && data.styleModels) || []}
                   selectedStyleModel={selectedStyleModel}
                   selectStyleModel={model => {
                     selectStyleModel(model)
