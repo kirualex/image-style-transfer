@@ -4,6 +4,7 @@ import { CloudUpload } from "@material-ui/icons"
 import { Query, Subscription } from "react-apollo"
 import gql from "graphql-tag"
 import { observer } from "mobx-react-lite"
+import { BarLoader } from 'react-spinners'
 
 import { uploadImage, fileToBase64 } from "../../api"
 import StyleModelSelector from "../StyleModelSelector"
@@ -60,11 +61,15 @@ const styles = theme => ({
     display: "flex",
     alignItems: "center",
     flexDirection: "column"
+  },
+  loadWrapper: {
+    minHeight: 5
   }
 })
 
 function ImageUploader(props) {
   const { classes } = props
+  const [loading, setLoading] = React.useState(false)
   const [selectedImage, selectImage] = React.useState({
     file: null,
     src: ""
@@ -80,10 +85,19 @@ function ImageUploader(props) {
         if (styleTransferEvent.name === "UPLOAD_SUCCEEDED") {
           imageStore.setUploadedImage(styleTransferEvent.imageURL)
         }
+        if (styleTransferEvent.name === 'STYLIZE_STARTED') {
+          setLoading(true)
+        }
+        if (['UPLOAD_SUCCEEDED', 'STYLIZE_ERROR'].includes(styleTransferEvent.name)) {
+          setLoading(false)
+        }
       }}
     >
       {() => (
         <div className={classes.root}>
+          <div className={classes.loadWrapper}>
+            {loading && <BarLoader width="100%" />}
+          </div>
           <Query
             query={STYLES_QUERY}
             onCompleted={({ styleModels }) => {
@@ -123,7 +137,7 @@ function ImageUploader(props) {
               disabled={!selectedImage.file}
               className={classes.sendButton}
               onClick={() => {
-                if (selectedImage.file) {
+                if (selectedImage.file && selectedStyleModel) {
                   uploadImage(selectedImage.file, selectedStyleModel.id)
                 }
               }}

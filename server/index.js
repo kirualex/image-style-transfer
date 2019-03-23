@@ -48,7 +48,16 @@ app.post("/image", async (req, res) => {
     if (!result.success) {
       throw new Error(result.err)
     }
+
+    pubsub.publish("styleTransferEvent", {
+      styleTransferEvent: {
+        name: events.STYLIZE_SUCCEEDED,
+        message: "Image stylizing succeeded"
+      }
+    })    
+
     const imageURL = await uploadImage(result.file.name, result.file.path)
+
     pubsub.publish("styleTransferEvent", {
       styleTransferEvent: {
         name: events.UPLOAD_SUCCEEDED,
