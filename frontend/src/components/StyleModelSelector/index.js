@@ -6,6 +6,9 @@ import {
   MenuItem,
   InputLabel
 } from "@material-ui/core"
+import { observer } from "mobx-react-lite"
+
+import { StyleModelStoreContext } from "../../stores/StyleModelStore"
 
 const styles = {
   select: {
@@ -13,34 +16,41 @@ const styles = {
     width: "100%"
   },
   previewImageDiv: {
-    display: 'flex',
-    justifyContent: 'center'
+    display: "flex",
+    justifyContent: "center"
   },
   previewPlaceholder: {
     minHeight: 150
   }
 }
 
-function StyleModelSelector(props) {
-  const { classes, selectStyleModel, selectedStyleModel, styleModels } = props
+function StyleModelSelector({ classes, styleModels }) {
+  const styleModelStore = React.useContext(StyleModelStoreContext)
+  const { selectedStyleModel, selectStyleModel } = styleModelStore
 
   return (
     <React.Fragment>
       <div className={classes.previewImageDiv}>
         {selectedStyleModel ? (
           <img
-            height="150"          
+            height="150"
             alt={selectedStyleModel.name}
             src={selectedStyleModel.imageSrc}
           />
-        ) : (<div className={classes.previewPlaceholder} />)}
+        ) : (
+          <div className={classes.previewPlaceholder} />
+        )}
       </div>
       <InputLabel htmlFor="model-selector">Select a style</InputLabel>
       <Select
         id="model-selector"
         disabled={styleModels.length === 0}
         className={classes.select}
-        value={selectedStyleModel ? selectedStyleModel.id : ""}
+        value={
+          selectedStyleModel
+            ? selectedStyleModel.id
+            : ""
+        }
         onChange={e => {
           const model = styleModels.find(model => model.id === e.target.value)
           selectStyleModel(model)
@@ -57,4 +67,4 @@ function StyleModelSelector(props) {
   )
 }
 
-export default withStyles(styles)(StyleModelSelector)
+export default withStyles(styles)(observer(StyleModelSelector))

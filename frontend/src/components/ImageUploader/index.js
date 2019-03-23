@@ -4,12 +4,13 @@ import { CloudUpload } from "@material-ui/icons"
 import { Query, Subscription } from "react-apollo"
 import gql from "graphql-tag"
 import { observer } from "mobx-react-lite"
-import { BarLoader } from 'react-spinners'
+import { BarLoader } from "react-spinners"
 
-import { uploadImage, fileToBase64 } from "../../api"
+import { uploadImage } from "../../api"
 import StyleModelSelector from "../StyleModelSelector"
 import ImageSelector from "../ImageSelector"
 import { ImageStoreContext } from "../../stores/ImageStore"
+import { StyleModelStoreContext } from "../../stores/StyleModelStore"
 
 const STYLES_QUERY = gql`
   query styleModels {
@@ -70,12 +71,12 @@ const styles = theme => ({
 
 function ImageUploader({ classes }) {
   const [loading, setLoading] = React.useState(false)
-  const [selectedImage, selectImage] = React.useState({
-    file: null,
-    src: ""
-  })
-  const [selectedStyleModel, selectStyleModel] = React.useState(null)
   const imageStore = React.useContext(ImageStoreContext)
+  const styleModelStore = React.useContext(StyleModelStoreContext)
+  // Component didn't re-render if an observable value
+  // below wasn't referenced above return expression...?
+  const { selectedImage, setUploadedImage, uploadedImageURL } = imageStore
+  const { selectedStyleModel, selectStyleModel } = styleModelStore
 
   return (
     <Subscription
@@ -83,12 +84,16 @@ function ImageUploader({ classes }) {
       onSubscriptionData={({ subscriptionData: { data } }) => {
         const { styleTransferEvent } = data
         if (styleTransferEvent.name === "UPLOAD_SUCCEEDED") {
-          imageStore.setUploadedImage(styleTransferEvent.imageURL)
+          setUploadedImage(styleTransferEvent.imageURL)
         }
-        if (styleTransferEvent.name === 'STYLIZE_STARTED') {
+        if (styleTransferEvent.name === "STYLIZE_STARTED") {
           setLoading(true)
         }
-        if (['UPLOAD_SUCCEEDED', 'STYLIZE_ERROR'].includes(styleTransferEvent.name)) {
+        if (
+          ["UPLOAD_SUCCEEDED", "STYLIZE_ERROR"].includes(
+            styleTransferEvent.name
+          )
+        ) {
           setLoading(false)
         }
       }}
@@ -110,55 +115,50 @@ function ImageUploader({ classes }) {
               <div>
                 <StyleModelSelector
                   styleModels={(data && data.styleModels) || []}
-                  selectedStyleModel={selectedStyleModel}
-                  selectStyleModel={model => {
-                    selectStyleModel(model)
-                  }}
                 />
               </div>
             )}
           </Query>
           <div className={classes.buttons}>
-            <ImageSelector
-              disabled={loading}
-              selectFile={file => {
-                selectImage(selectedImage => ({ ...selectedImage, file }))
-
-                fileToBase64(file).then(source => {
-                  selectImage(selectedImage => ({
-                    ...selectedImage,
-                    src: source
-                  }))
-                })
-              }}
-            />
+            <ImageSelector disabled={loading} />
             <Button
               variant="contained"
               component="span"
-              disabled={!selectedImage.file || !selectedStyleModel || loading}
+              disabled={
+                (selectedImage && !selectedImage.file) ||
+                !selectedStyleModel ||
+                loading
+              }
               className={classes.sendButton}
               onClick={() => {
-                uploadImage(selectedImage.file, selectedStyleModel.id)
+                uploadImage(
+                  selectedImage.file,
+                  selectedStyleModel.id
+                )
               }}
             >
               Stylize
               <CloudUpload className={classes.rightIcon} />
             </Button>
           </div>
-          {selectedImage.file && selectedImage.file.name && (
-            <div className={classes.imageName}>{selectedImage.file.name}</div>
-          )}
+          {selectedImage &&
+            selectedImage.file &&
+            selectedImage.file.name && (
+              <div className={classes.imageName}>
+                {selectedImage.file.name}
+              </div>
+            )}
           <div className={classes.images}>
-            {selectedImage.src && (
+            {selectedImage && selectedImage.src && (
               <img
                 src={selectedImage.src}
                 alt="selectedImage"
                 className={classes.image}
               />
             )}
-            {imageStore.uploadedImageURL && (
+            {uploadedImageURL && (
               <img
-                src={imageStore.uploadedImageURL}
+                src={uploadedImageURL}
                 alt="stylizedImage"
                 className={classes.image}
               />

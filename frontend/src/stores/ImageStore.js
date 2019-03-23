@@ -3,6 +3,11 @@ import { observable, action, decorate } from 'mobx'
 
 class ImageStore {
   uploadedImageURL = ''
+  selectedImage = null
+
+  selectImage(image) {
+    this.selectedImage = image
+  }
 
   setUploadedImage(imageURL) {
     this.uploadedImageURL = imageURL
@@ -10,6 +15,8 @@ class ImageStore {
 }
 
 decorate(ImageStore, {
+  selectedImage: observable,
+  selectImage: action.bound,
   uploadedImageURL: observable,
   setUploadedImage: action.bound
 })
