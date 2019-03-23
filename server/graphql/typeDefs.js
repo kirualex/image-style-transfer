@@ -8,7 +8,27 @@ module.exports = gql`
     imageSrc: String
   }
 
+  interface Event {
+    name: String!
+    message: String!
+  }
+
+  type GenericEvent implements Event {
+    name: String!
+    message: String!
+  }
+
+  type UploadSucceededEvent implements Event {
+    name: String!
+    message: String!
+    imageURL: String!
+  }
+
   type Query {
     styleModels: [StyleModel!]!
+  }
+
+  type Subscription {
+    styleTransferEvent: Event!
   }
 `

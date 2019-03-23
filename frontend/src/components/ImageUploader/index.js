@@ -1,7 +1,7 @@
 import React from "react"
 import { withStyles, Button } from "@material-ui/core"
 import { CloudUpload } from "@material-ui/icons"
-import { Query } from "react-apollo"
+import { Query, Subscription } from "react-apollo"
 import gql from "graphql-tag"
 import { observer } from "mobx-react-lite"
 
@@ -17,6 +17,18 @@ const STYLES_QUERY = gql`
       name
       filename
       imageSrc
+    }
+  }
+`
+
+const STYLE_TRANSFER_EVENT_SUBSCRIPTION = gql`
+  subscription styleTransferEvent {
+    styleTransferEvent {
+      name
+      message
+      ... on UploadSucceededEvent {
+        imageURL
+      }
     }
   }
 `
@@ -61,71 +73,87 @@ function ImageUploader(props) {
   const imageStore = React.useContext(ImageStoreContext)
 
   return (
-    <div className={classes.root}>
-      <Query
-        query={STYLES_QUERY}
-        onCompleted={({ styleModels }) => {
-          if (!selectedStyleModel) {
-            selectStyleModel(styleModels[0])
-          }
-        }}
-      >
-        {({ data }) => (
-          <div>
-            <StyleModelSelector
-              styleModels={data.styleModels || []}
-              selectedStyleModel={selectedStyleModel}
-              selectStyleModel={model => {
-                selectStyleModel(model)
+    <Subscription
+      subscription={STYLE_TRANSFER_EVENT_SUBSCRIPTION}
+      onSubscriptionData={({ subscriptionData: { data } }) => {
+        const { styleTransferEvent } = data
+        if (styleTransferEvent.name === "UPLOAD_SUCCEEDED") {
+          imageStore.setUploadedImage(styleTransferEvent.imageURL)
+        }
+      }}
+    >
+      {() => (
+        <div className={classes.root}>
+          <Query
+            query={STYLES_QUERY}
+            onCompleted={({ styleModels }) => {
+              if (!selectedStyleModel) {
+                selectStyleModel(styleModels[0])
+              }
+            }}
+          >
+            {({ data }) => (
+              <div>
+                <StyleModelSelector
+                  styleModels={data.styleModels || []}
+                  selectedStyleModel={selectedStyleModel}
+                  selectStyleModel={model => {
+                    selectStyleModel(model)
+                  }}
+                />
+              </div>
+            )}
+          </Query>
+          <div className={classes.buttons}>
+            <ImageSelector
+              selectFile={file => {
+                selectImage(selectedImage => ({ ...selectedImage, file }))
+
+                fileToBase64(file).then(source => {
+                  selectImage(selectedImage => ({
+                    ...selectedImage,
+                    src: source
+                  }))
+                })
               }}
             />
+            <Button
+              variant="contained"
+              component="span"
+              disabled={!selectedImage.file}
+              className={classes.sendButton}
+              onClick={() => {
+                if (selectedImage.file) {
+                  uploadImage(selectedImage.file, selectedStyleModel.id)
+                }
+              }}
+            >
+              Stylize
+              <CloudUpload className={classes.rightIcon} />
+            </Button>
           </div>
-        )}
-      </Query>
-      <div className={classes.buttons}>
-        <ImageSelector
-          selectFile={file => {
-            selectImage(selectedImage => ({ ...selectedImage, file }))
-
-            fileToBase64(file).then(source => {
-              selectImage(selectedImage => ({ ...selectedImage, src: source }))
-            })
-          }}
-        />
-        <Button
-          variant="contained"
-          component="span"
-          className={classes.sendButton}
-          onClick={() => {
-            if (selectedImage.file) {
-              uploadImage(selectedImage.file, selectedStyleModel.id)
-            }
-          }}
-        >
-          Stylize
-          <CloudUpload className={classes.rightIcon} />
-        </Button>
-      </div>
-      {selectedImage.file && selectedImage.file.name && (
-        <div className={classes.imageName}>{selectedImage.file.name}</div>
+          {selectedImage.file && selectedImage.file.name && (
+            <div className={classes.imageName}>{selectedImage.file.name}</div>
+          )}
+          <div className={classes.images}>
+            {selectedImage.src && (
+              <img
+                src={selectedImage.src}
+                alt="selectedImage"
+                className={classes.image}
+              />
+            )}
+            {imageStore.uploadedImageURL && (
+              <img
+                src={imageStore.uploadedImageURL}
+                alt="stylizedImage"
+                className={classes.image}
+              />
+            )}
+          </div>
+        </div>
       )}
-      <div className={classes.images}>
-        {selectedImage.src && (
-          <img
-            src={selectedImage.src}
-            alt="selectedImage"
-            className={classes.image}
-          />
-        )}
-        {imageStore.uploadedImageURL && (
-          <img
-            src={imageStore.uploadedImageURL}
-            alt="stylizedImage"
-            className={classes.image}
-          />
-        )}
-      </div>
-    </div>
+    </Subscription>
   )
 }
 

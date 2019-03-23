@@ -1,0 +1,1 @@
+{"__schema":{"types":[{"kind":"INTERFACE","name":"Event","possibleTypes":[{"name":"GenericEvent"},{"name":"UploadSucceededEvent"}]}]}}

@@ -4,8 +4,6 @@ const spawn = require("child_process").spawn
 const { Storage } = require("@google-cloud/storage")
 const { Datastore } = require("@google-cloud/datastore")
 
-const { ws } = require("./ws")
-
 const bucketName = process.env.GCP_BUCKET_NAME
 const projectId = process.env.GCP_PROJECT_ID
 const keyFilePath = path.resolve(process.cwd(), 'general-czar-keyfile.json')
@@ -125,7 +123,7 @@ function stylizeImage(file, modelId) {
     })
 
     proc.on("close", (code, signal) => {
-      resolve({ code, file: { path: outputFilePath, name: outputFileNameWithExt }, err })
+      resolve({ success: code !== 1, file: { path: outputFilePath, name: outputFileNameWithExt }, err })
     })
   })
 }

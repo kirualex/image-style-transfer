@@ -6,9 +6,9 @@ const formidable = require("express-formidable")
 const bodyParser = require("body-parser")
 
 const { stylizeImage, uploadImage, getStylingModels } = require("./helpers")
-const WebSocket = require("ws")
-const { ws } = require("./ws")
 const { createGraphQLServer } = require("./graphql")
+const { pubsub } = require("./graphql/pubsub")
+const events = require('./events')
 
 const PORT = 3001
 
@@ -25,7 +25,7 @@ app.use(
   })
 )
 
-// need an ID from client so events can be sent to the correct websocket
+// todo move to graphql via upload link
 app.post("/image", async (req, res) => {
   const { files, fields } = req
   const { modelId } = fields
@@ -34,60 +34,35 @@ app.post("/image", async (req, res) => {
   const filePath = file.path
   const fileName = file.name
 
-  let client
-  ws.clients.forEach(c => {
-    if (c !== ws && c.readyState === WebSocket.OPEN) {
-      client = c
+  res.status(200).send("ok")
+
+  pubsub.publish("styleTransferEvent", {
+    styleTransferEvent: {
+      name: events.STYLIZE_STARTED,
+      message: "Image stylizing started"
     }
   })
 
-  res.status(200).send("ok")
-
-  const event = {
-    type: "STYLIZE_STARTED",
-    message: "Image stylizing started"
-  }
-
-  client.send(JSON.stringify(event))
-
   try {
     const result = await stylizeImage(file, modelId)
-    if (result.code === 1) {
-      const errorEvent = {
-        type: "STYLIZE_ERROR",
-        error: result.err,
-        message: result.err.message
-      }
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify(errorEvent))
-      }
-    } else {
-      const stylizeSuccessEvent = {
-        type: "STYLIZE_SUCCESS",
-        message: "Stylizing was successful"
-      }
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify(stylizeSuccessEvent))
-      }
-      const imageURL = await uploadImage(result.file.name, result.file.path)
-      const uploadSuccessEvent = {
-        type: "UPLOAD_SUCCESS",
+    if (!result.success) {
+      throw new Error(result.err)
+    }
+    const imageURL = await uploadImage(result.file.name, result.file.path)
+    pubsub.publish("styleTransferEvent", {
+      styleTransferEvent: {
+        name: events.UPLOAD_SUCCEEDED,
         message: "Image upload was successful",
         imageURL
       }
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify(uploadSuccessEvent))
+    })
+  } catch (err) {
+    pubsub.publish("styleTransferEvent", {
+      styleTransferEvent: {
+        name: events.STYLIZE_ERROR,
+        message: eerr.message
       }
-    }
-  } catch (e) {
-    const errorEvent = {
-      type: "STLIZE_ERROR",
-      error: e,
-      message: e.message
-    }
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify(errorEvent))
-    }
+    })
   }
 })
 
@@ -96,5 +71,7 @@ const apolloServer = createGraphQLServer(app, httpServer)
 
 httpServer.listen(PORT, () => {
   console.log("Express listening on port 4001")
-  console.log(`Apollo Server listening on port 4001 ${apolloServer.graphqlPath}`)
+  console.log(
+    `Apollo Server listening on port 4001 ${apolloServer.graphqlPath}`
+  )
 })
