@@ -63,12 +63,12 @@ const styles = theme => ({
     flexDirection: "column"
   },
   loadWrapper: {
-    minHeight: 5
+    minHeight: 10,
+    margin: 10
   }
 })
 
-function ImageUploader(props) {
-  const { classes } = props
+function ImageUploader({ classes }) {
   const [loading, setLoading] = React.useState(false)
   const [selectedImage, selectImage] = React.useState({
     file: null,
@@ -96,7 +96,7 @@ function ImageUploader(props) {
       {() => (
         <div className={classes.root}>
           <div className={classes.loadWrapper}>
-            {loading && <BarLoader width="100%" />}
+            {loading && <BarLoader width={100} widthUnit="%" />}
           </div>
           <Query
             query={STYLES_QUERY}
@@ -120,6 +120,7 @@ function ImageUploader(props) {
           </Query>
           <div className={classes.buttons}>
             <ImageSelector
+              disabled={loading}
               selectFile={file => {
                 selectImage(selectedImage => ({ ...selectedImage, file }))
 
@@ -134,12 +135,10 @@ function ImageUploader(props) {
             <Button
               variant="contained"
               component="span"
-              disabled={!selectedImage.file}
+              disabled={!selectedImage.file || !selectedStyleModel || loading}
               className={classes.sendButton}
               onClick={() => {
-                if (selectedImage.file && selectedStyleModel) {
-                  uploadImage(selectedImage.file, selectedStyleModel.id)
-                }
+                uploadImage(selectedImage.file, selectedStyleModel.id)
               }}
             >
               Stylize

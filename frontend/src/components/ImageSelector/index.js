@@ -1,11 +1,11 @@
 import React from "react"
 import { Tooltip, Button } from "@material-ui/core"
 
-function ImageSelector(props) {
-  const { selectFile } = props
+function ImageSelector({ selectFile, disabled  }) {
   return (
     <React.Fragment>
       <input
+        disabled={disabled}
         accept=".jpg, .jpeg"
         style={{ display: "none" }}
         id="contained-button-file"

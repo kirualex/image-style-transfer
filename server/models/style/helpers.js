@@ -28,7 +28,7 @@ function getFileURL(fileName, modelName) {
 }
 
 function getSourceImageURL(imageFilename) {
-  return `https://storage.googleapis.com/${bucketName}/_model-source-images/${imageFilename}`
+  return `https://storage.cloud.google.com/${bucketName}/_model-source-images/${imageFilename}`
 }
 
 function getTempModelPath(modelId) {
