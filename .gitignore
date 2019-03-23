@@ -1,0 +1,7 @@
+node_modules
+general-czar-keyfile.json
+style_transfer/data
+val2017*
+style_transfer/dist
+style_transfer/express/temp
+style_transfer/example
