@@ -7,7 +7,7 @@ import {
   InputLabel
 } from "@material-ui/core"
 
-const styles = () => ({
+const styles = {
   select: {
     marginBottom: 15,
     width: "100%"
@@ -19,7 +19,7 @@ const styles = () => ({
   previewPlaceholder: {
     minHeight: 150
   }
-})
+}
 
 function StyleModelSelector(props) {
   const { classes, selectStyleModel, selectedStyleModel, styleModels } = props

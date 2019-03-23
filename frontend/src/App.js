@@ -1,21 +1,24 @@
-import React, { Component } from "react"
+import React from "react"
 import { ApolloProvider } from "react-apollo"
+import { Router } from "@reach/router"
 
 import "./App.css"
+import { apolloClient } from "./graphql/client"
 import Layout from "./components/Layout"
 import ImageUploader from "./components/ImageUploader"
-import { apolloClient } from "./graphql/client"
+import SubmitStyle from "./components/SubmitStyle"
 
-class App extends Component {
-  render() {
-    return (
-      <ApolloProvider client={apolloClient}>
-        <Layout>
-          <ImageUploader />
+function App() {
+  return (
+    <ApolloProvider client={apolloClient}>
+      <Router>
+        <Layout path="/">
+          <ImageUploader path="/" />
+          <SubmitStyle path="/create" />
         </Layout>
-      </ApolloProvider>
-    )
-  }
+      </Router>
+    </ApolloProvider>
+  )
 }
 
 export default App

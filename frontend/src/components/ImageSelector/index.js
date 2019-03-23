@@ -1,13 +1,22 @@
 import React from "react"
-import { Tooltip, Button } from "@material-ui/core"
+import { withStyles, Tooltip, Button } from "@material-ui/core"
 
-function ImageSelector({ selectFile, disabled  }) {
+const styles = {
+  tooltip: {
+    fontSize: 12
+  },
+  fileInput: {
+    display: "none"
+  }
+}
+
+function ImageSelector({ classes, selectFile, disabled }) {
   return (
     <React.Fragment>
       <input
         disabled={disabled}
         accept=".jpg, .jpeg"
-        style={{ display: "none" }}
+        className={classes.fileInput}
         id="contained-button-file"
         multiple
         type="file"
@@ -20,7 +29,12 @@ function ImageSelector({ selectFile, disabled  }) {
         }}
       />
       <label htmlFor="contained-button-file">
-        <Tooltip title="Accepts .jpg and .jpeg files">
+        <Tooltip
+          classes={{
+            tooltip: classes.tooltip
+          }}
+          title="Accepts .jpg and .jpeg files"
+        >
           <Button variant="contained" component="span">
             Select image
           </Button>
@@ -30,4 +44,4 @@ function ImageSelector({ selectFile, disabled  }) {
   )
 }
 
-export default ImageSelector
+export default withStyles(styles)(ImageSelector)
