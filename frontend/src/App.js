@@ -14,7 +14,7 @@ function App() {
       <Router>
         <Layout path="/">
           <ImageUploader path="/" />
-          <SubmitStyle path="/create" />
+          <SubmitStyle path="/submit" />
         </Layout>
       </Router>
     </ApolloProvider>

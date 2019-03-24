@@ -6,7 +6,7 @@ import gql from "graphql-tag"
 import { observer } from "mobx-react-lite"
 import { BarLoader } from "react-spinners"
 
-import { uploadImage } from "../../api"
+import { uploadImage, fileToBase64 } from "../../api"
 import StyleModelSelector from "../StyleModelSelector"
 import ImageSelector from "../ImageSelector"
 import { ImageStoreContext } from "../../stores/ImageStore"
@@ -75,7 +75,7 @@ function ImageUploader({ classes }) {
   const styleModelStore = React.useContext(StyleModelStoreContext)
   // Component didn't re-render if an observable value
   // below wasn't referenced above return expression...?
-  const { selectedImage, setUploadedImage, uploadedImageURL } = imageStore
+  const { selectedImage, selectImage, setUploadedImage, uploadedImageURL } = imageStore
   const { selectedStyleModel, selectStyleModel } = styleModelStore
 
   return (
@@ -120,7 +120,17 @@ function ImageUploader({ classes }) {
             )}
           </Query>
           <div className={classes.buttons}>
-            <ImageSelector disabled={loading} />
+            <ImageSelector
+              disabled={loading}
+              onSelect={file => {
+                fileToBase64(file).then(source => {
+                  selectImage({
+                    file,
+                    src: source
+                  })
+                })
+              }}
+            />
             <Button
               variant="contained"
               component="span"
@@ -131,23 +141,16 @@ function ImageUploader({ classes }) {
               }
               className={classes.sendButton}
               onClick={() => {
-                uploadImage(
-                  selectedImage.file,
-                  selectedStyleModel.id
-                )
+                uploadImage(selectedImage.file, selectedStyleModel.id)
               }}
             >
               Stylize
               <CloudUpload className={classes.rightIcon} />
             </Button>
           </div>
-          {selectedImage &&
-            selectedImage.file &&
-            selectedImage.file.name && (
-              <div className={classes.imageName}>
-                {selectedImage.file.name}
-              </div>
-            )}
+          {selectedImage && selectedImage.file && selectedImage.file.name && (
+            <div className={classes.imageName}>{selectedImage.file.name}</div>
+          )}
           <div className={classes.images}>
             {selectedImage && selectedImage.src && (
               <img

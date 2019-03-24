@@ -1,9 +1,5 @@
 import React from "react"
 import { withStyles, Tooltip, Button } from "@material-ui/core"
-import { observer } from "mobx-react-lite"
-
-import { fileToBase64 } from "../../api"
-import { ImageStoreContext } from "../../stores/ImageStore"
 
 const styles = {
   tooltip: {
@@ -14,9 +10,7 @@ const styles = {
   }
 }
 
-function ImageSelector({ classes, disabled }) {
-  const imageStore = React.useContext(ImageStoreContext)
-  const { selectImage } = imageStore
+function ImageSelector({ classes, onSelect, disabled }) {
 
   return (
     <React.Fragment>
@@ -32,12 +26,7 @@ function ImageSelector({ classes, disabled }) {
           if (!file) {
             return
           }
-          fileToBase64(file).then(source => {
-            selectImage({
-              file,
-              src: source
-            })
-          })
+          onSelect(file)
         }}
       />
       <label htmlFor="contained-button-file">
@@ -56,4 +45,4 @@ function ImageSelector({ classes, disabled }) {
   )
 }
 
-export default withStyles(styles)(observer(ImageSelector))
+export default withStyles(styles)(ImageSelector)
