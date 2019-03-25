@@ -8,8 +8,12 @@ module.exports = {
       switch (event.name) {
         case events.UPLOAD_SUCCEEDED:
           return 'UploadSucceededEvent'
+        case events.MODEL_TRAINING_ITERATION_COMPLETED:
+          return 'ModelTrainingIterationCompletedEvent'
+        case events.MODEL_TRAINING_COMPLETED:
+          return 'ModelTrainingCompletedEvent'
         case undefined:
-          throw new Error(`event name is missing: JSON.stringify(data)`)
+          throw new Error(`Event name is missing: JSON.stringify(data)`)
         default:
           return 'GenericEvent'
       }
@@ -23,6 +27,9 @@ module.exports = {
   Subscription: {
     styleTransferEvent: {
       subscribe: () => pubsub.asyncIterator('styleTransferEvent')
+    },
+    modelTrainingEvent: {
+      subscribe: () => pubsub.asyncIterator('modelTrainingEvent')
     }
   }
 }

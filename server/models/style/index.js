@@ -13,15 +13,22 @@ const {
   generateID,
   readFile
 } = require("./helpers")
+const events = require('../../events')
+const { pubusb } = require("../../graphql/pubsub")
 
 const bucketName = process.env.GCP_BUCKET_NAME
 const projectId = process.env.GCP_PROJECT_ID
 
 const styleTransferPath = path.resolve(process.cwd(), "style_transfer")
-
 const stylizeScriptPath = path.resolve(styleTransferPath, "stylize_image.py")
-
+const trainScriptPath = path.resolve(
+  styleTransferPath,
+  "style_transfer",
+  "train.py"
+)
 const outputImagePath = path.resolve(styleTransferPath, "output")
+
+process.env.PYTHONPATH = styleTransferPath
 
 const gcpOptions = {
   projectId: process.env.GCP_PROJECT_ID,
@@ -47,6 +54,36 @@ async function findStyleModels() {
   })
 }
 
+async function saveStyleModel(name) {
+  const dataStore = new Datastore(gcpOptions)
+  const key = dataStore.key("StyleModel")
+
+  const [result] = await dataStore.save({
+    key,
+    data: { name }
+  })
+  if (result.indexUpdates === 0) {
+    throw new Error("Couldn't save style model")
+  }
+  // { kind: 'StyleModel', idType: 'id', id }
+  const entityKey = result.mutationResults[0].key.path.find(
+    ({ idType }) => idType === "id"
+  )
+  return entityKey
+}
+
+async function updateStyleModel(id, data) {
+  const dataStore = new Datastore(gcpOptions)
+  const key = dataStore.key(["StyleModel", id])
+
+  const [result] = await dataStore.update({
+    key,
+    data
+  })
+
+  return result.indexUpdates > 0
+}
+
 async function findStyleModelById(modelId) {
   const dataStore = new Datastore(gcpOptions)
   const id = parseInt(modelId, 10)
@@ -55,55 +92,28 @@ async function findStyleModelById(modelId) {
   return styleModel
 }
 
-async function uploadImage(fileName, inputFilePath) {
-  // const { stream, filename, mimetype, encoding } = await file
-
-  let buffer
-  try {
-    buffer = await readFile(inputFilePath)
-  } catch (e) {
-    console.error(e)
-    return
-  }
-
+async function uploadFile(directory, filename, buffer) {
   const storage = new Storage(gcpOptions)
 
   const bucket = await storage.bucket(bucketName)
-  // await bucket.upload(inputFilePath)
-  const modelName = "default"
   const imageID = generateID()
-  const bucketImageName = `${imageID}-${fileName}`
-  const file = bucket.file(`${modelName}/${bucketImageName}`)
+  const bucketImageName = `${imageID}-${filename}`
+  const file = bucket.file(`${directory}/${bucketImageName}`)
 
-  console.log(`Uploading file ${bucketImageName} (model: ${modelName})`)
+  console.log(`Uploading file ${directory}/${bucketImageName}`)
 
   await file.save(buffer, {
-    contentType: "image/jpeg" // mimetype
+    contentType: "image/jpeg"
   })
-  // stream.on('end', () => {
-  //   console.log(`Upload finished for file ${fileName} (model: ${modelName})`)
-  // })
-
-  // const blobStream = file.createWriteStream({
-  //   metadata: {
-  //     contentType: 'image/jpeg' // mimetype
-  //   }
-  // })
-
-  // stream.pipe(blobStream)
-
-  // stream.on('error', err => {
-  //   console.log('Error while writing file to storage: ', err)
-  // })
 
   await storage
     .bucket(bucketName)
-    .file(`${modelName}/${bucketImageName}`)
+    .file(`${directory}/${bucketImageName}`)
     .makePublic()
 
-  console.log(`Made file ${bucketImageName} (model: ${modelName}) public`)
+  console.log(`Made file ${directory}/${bucketImageName} public`)
 
-  return getFileURL(bucketImageName, modelName)
+  return { url: getFileURL(bucketImageName, directory), name: bucketImageName }
 }
 
 async function downloadModel(modelId) {
@@ -165,4 +175,58 @@ function stylizeImage(file, modelId) {
   })
 }
 
-module.exports = { findStyleModels, stylizeImage, downloadModel, uploadImage }
+function trainModel({ filePath, modelId, iterations, onData }) {
+  return new Promise(async (resolve, reject) => {
+    const inputFilePath = `${process.cwd()}/${filePath}`
+
+    const modelPath = getTempModelPath(modelId)
+
+    const proc = spawn("python", [
+      trainScriptPath,
+      "--training-image-dset",
+      path.resolve(styleTransferPath, "example", "training_images.tfrecord"),
+      "--style-images",
+      inputFilePath,
+      "--model-checkpoint",
+      modelPath,
+      "--image-size",
+      "256,256",
+      "--alpha",
+      "0.25",
+      "--log-interval",
+      "1",
+      "--num-iterations",
+      iterations
+    ])
+
+    let data
+    proc.stdout.on("data", d => {
+      data += d
+    })
+
+    let err
+    proc.stderr.on("data", d => {
+      onData(d)
+      err += d
+    })
+
+    proc.on("close", (code, signal) => {
+      const success = code !== 1
+      resolve({
+        success,
+        modelPath,
+        err
+      })
+    })
+  })
+}
+
+module.exports = {
+  findStyleModels,
+  stylizeImage,
+  trainModel,
+  saveStyleModel,
+  updateStyleModel,
+  downloadModel,
+  uploadFile
+}

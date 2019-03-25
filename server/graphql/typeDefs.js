@@ -24,11 +24,25 @@ module.exports = gql`
     imageURL: String!
   }
 
+  type ModelTrainingIterationCompletedEvent implements Event {
+    name: String!
+    message: String!
+    currentIteration: Int!
+    maxIterations: Int!
+  }
+
+  type ModelTrainingCompletedEvent implements Event {
+    name: String!
+    message: String!
+    styleModel: StyleModel!
+  }
+
   type Query {
     styleModels: [StyleModel!]!
   }
 
   type Subscription {
     styleTransferEvent: Event!
+    modelTrainingEvent: Event!
   }
 `

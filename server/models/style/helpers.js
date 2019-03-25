@@ -4,13 +4,13 @@ const fs = require('fs')
 const bucketName = process.env.GCP_BUCKET_NAME
 const styleTransferPath = path.resolve(process.cwd(), "style_transfer")
 
-function getModelPath(filename) {
-  if (!filename) {
-    console.warn('getModelPath: no model specified, using starry_night by default')
-    return path.resolve(styleTransferPath, 'example', 'starry_night.h5')
-  }
-  return path.resolve(styleTransferPath, 'example', filename)
-}
+// function getModelPath(filename) {
+//   if (!filename) {
+//     console.warn('getModelPath: no model specified, using starry_night by default')
+//     return path.resolve(styleTransferPath, 'example', 'starry_night.h5')
+//   }
+//   return path.resolve(styleTransferPath, 'example', filename)
+// }
 
 function getFilename(file) {
   let parts = file.name.split(".")

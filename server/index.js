@@ -5,19 +5,35 @@ const cors = require("cors")
 const formidable = require("express-formidable")
 const bodyParser = require("body-parser")
 
-const { stylizeImage, uploadImage } = require("./models/style")
+const {
+  saveStyleModel,
+  updateStyleModel,
+  stylizeImage,
+  uploadFile,
+  trainModel
+} = require("./models/style")
+const { readFile } = require("./models/style/helpers")
 const { createGraphQLServer } = require("./graphql")
 const { pubsub } = require("./graphql/pubsub")
-const events = require('./events')
+const events = require("./events")
 
 const PORT = 3001
 
 const app = express()
 
 app.use(cors())
-app.use("/image", bodyParser.urlencoded({ extended: false }))
+app.use("/trainmodel", bodyParser.urlencoded({ extended: false }))
+app.use("/styleimage", bodyParser.urlencoded({ extended: false }))
 app.use(
-  "/image",
+  "/trainmodel",
+  formidable({
+    encoding: "utf-8",
+    uploadDir: "./temp",
+    multiples: false
+  })
+)
+app.use(
+  "/styleimage",
   formidable({
     encoding: "utf-8",
     uploadDir: "./temp",
@@ -25,14 +41,122 @@ app.use(
   })
 )
 
-// todo move to graphql via upload link
-app.post("/image", async (req, res) => {
+app.post("/trainmodel", async (req, res) => {
+  const { files, fields } = req
+  const { modelName, fileExtension } = fields
+
+  const { file } = files
+  const parts = file.name.split(".")
+  const ext = parts[parts.length - 1]
+
+  res.status(200).send("ok")
+
+  const { kind, id } = await saveStyleModel(modelName)
+  const modelPreviewImageFileName = `${id}.${ext}`
+
+  pubsub.publish('modelTrainingEvent', {
+    modelTrainingEvent: {
+      name: events.MODEL_TRAINING_STARTED,
+      message: "Style model training started"
+    }
+  })
+
+  try {
+    let imageBuffer
+    try {
+      imageBuffer = await readFile(file.path)
+    } catch (e) {
+      throw e
+    }
+    const { url, name: imageFilename } = await uploadFile(
+      "_model-source-images",
+      modelPreviewImageFileName,
+      imageBuffer
+    )
+
+    const iterations = 5
+    const result = await trainModel({
+      filePath: file.path,
+      modelId: id,
+      iterations,
+      onData: data => {
+        const message = data.toString()
+        if (message.match(/Training Update/)) {
+          const rxp = new RegExp(/(Step: .*)/g)
+          const [stepsString] = message.match(rxp)
+          if (stepsString) {
+            let steps = stepsString.replace("Step: ", "")
+            steps = parseInt(steps, 10) + 1 //starts from 0
+
+            pubsub.publish('modelTrainingEvent', {
+              modelTrainingEvent: {
+                name: events.MODEL_TRAINING_ITERATION_COMPLETED,
+                currentIteration: steps,
+                maxIterations: iterations,
+                message: `${steps}/${iterations} iterations completed`
+              }
+            })
+          }
+          console.log("ERR", message)
+        }
+        if (message.match(/train_network:Done/)) {
+          console.log("ERR", message)
+        }
+      }
+    })
+
+    if (!result.success) {
+      throw result.err
+    }
+
+    pubsub.publish('modelTrainingEvent', {
+      modelTrainingEvent: {
+        name: events.MODEL_TRAINING_COMPLETED,
+        message: "Style model training completed"
+      }
+    })
+
+    let modelBuffer
+    try {
+      modelBuffer = await readFile(result.modelPath)
+    } catch (e) {
+      throw e
+    }
+
+    const { name: modelFilename } = await uploadFile(
+      "_models",
+      modelPreviewImageFileName,
+      modelBuffer
+    )
+
+    await updateStyleModel(parseInt(id, 10), {
+      modelFilename,
+      imageFilename,
+      name: modelName
+    })
+    // MODEL_TRAINING_SUCCEEDED
+    // pubsub.publish("styleTransferEvent", {
+    //   styleTransferEvent: {
+    //     name: events.UPLOAD_SUCCEEDED,
+    //     message: "Image upload was successful",
+    //     imageURL
+    //   }
+    // })
+  } catch (err) {
+    pubsub.publish({
+      trainingEvent: {
+        name: events.MODEL_TRAINING_ERROR,
+        message: err.message
+      }
+    })
+  }
+})
+
+app.post("/styleimage", async (req, res) => {
   const { files, fields } = req
   const { modelId } = fields
 
   const { file } = files
-  const filePath = file.path
-  const fileName = file.name
 
   res.status(200).send("ok")
 
@@ -54,15 +178,21 @@ app.post("/image", async (req, res) => {
         name: events.STYLIZE_SUCCEEDED,
         message: "Image stylizing succeeded"
       }
-    })    
+    })
 
-    const imageURL = await uploadImage(result.file.name, result.file.path)
+    let buffer
+    try {
+      buffer = await readFile(result.file.ath)
+    } catch (e) {
+      throw e
+    }
+    const { url } = await uploadFile("default", result.file.name, buffer)
 
     pubsub.publish("styleTransferEvent", {
       styleTransferEvent: {
         name: events.UPLOAD_SUCCEEDED,
         message: "Image upload was successful",
-        imageURL
+        imageURL: url
       }
     })
   } catch (err) {

@@ -5,7 +5,11 @@ const resolvers = require('./resolvers')
 function createGraphQLServer(expressApp, httpServer) {
   const apolloServer = new ApolloServer({
     typeDefs,
-    resolvers
+    resolvers,
+    formatError: error => {
+      console.error(error)
+      return error
+    }
   })
 
   apolloServer.applyMiddleware({ app: expressApp })

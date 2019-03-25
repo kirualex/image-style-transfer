@@ -1,19 +1,20 @@
 import axios from 'axios'
 
-export const uploadImage = (file, modelId) => {
+export const stylizeImage = (file, modelId) => {
   let data = new FormData()
   data.append('file', file, file.name)
   data.append('modelId', modelId)
-  // return axios.post('http://localhost:3001/image', data)
-  //   .then(res => ({ error: false, message: 'Success!' }))
-  //   .catch(error => ({ error: true, message: 'Error!' }))
 
-  return axios.post('http://localhost:3001/image', data)
-    .then(({ data }) => ({
-      image: data,
-      error: false,
-      message: 'Success!'
-    }))
+  return axios.post('http://localhost:3001/styleimage', data)
+    .catch(error => ({ error: true, message: 'Error!' }))
+}
+
+export const trainModel = (file, modelName) => {
+  let data = new FormData()
+  data.append('file', file, file.name)
+  data.append('modelName', modelName)
+
+  return axios.post('http://localhost:3001/trainmodel', data)
     .catch(error => ({ error: true, message: 'Error!' }))
 }
 

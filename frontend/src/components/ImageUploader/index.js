@@ -6,7 +6,7 @@ import gql from "graphql-tag"
 import { observer } from "mobx-react-lite"
 import { BarLoader } from "react-spinners"
 
-import { uploadImage, fileToBase64 } from "../../api"
+import { stylizeImage, fileToBase64 } from "../../api"
 import StyleModelSelector from "../StyleModelSelector"
 import ImageSelector from "../ImageSelector"
 import { ImageStoreContext } from "../../stores/ImageStore"
@@ -141,7 +141,7 @@ function ImageUploader({ classes }) {
               }
               className={classes.sendButton}
               onClick={() => {
-                uploadImage(selectedImage.file, selectedStyleModel.id)
+                stylizeImage(selectedImage.file, selectedStyleModel.id)
               }}
             >
               Stylize
