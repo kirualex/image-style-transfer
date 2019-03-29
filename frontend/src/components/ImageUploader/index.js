@@ -135,7 +135,7 @@ function ImageUploader({ classes }) {
               variant="contained"
               component="span"
               disabled={
-                (selectedImage && !selectedImage.file) ||
+                (!selectedImage || !selectedImage.file) ||
                 !selectedStyleModel ||
                 loading
               }

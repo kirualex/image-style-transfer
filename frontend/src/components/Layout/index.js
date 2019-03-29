@@ -39,7 +39,7 @@ function Layout({ children, path, classes }) {
         <Toolbar className={classes.toolbar}>
           <div>
             <Typography variant="title" color="inherit">
-              Transform your image!
+              <Link to="/" className={`${classes.noTextDecoration} ${classes.link}`}>Transform your image!</Link>
             </Typography>
           </div>
           <div>
