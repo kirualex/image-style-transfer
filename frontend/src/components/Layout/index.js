@@ -51,9 +51,9 @@ function Layout({ children, path, classes }) {
             </Link>
             <Link
               getProps={({ isCurrent }) => getLinkClasses(isCurrent, classes)}
-              to="/submit"
+              to="/train"
             >
-              Submit style
+              Train model
             </Link>
           </div>
         </Toolbar>

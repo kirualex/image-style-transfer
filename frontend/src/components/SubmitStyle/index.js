@@ -93,10 +93,10 @@ function SubmitStyle({ classes }) {
             {loading && <BarLoader width={100} widthUnit="%" />}
             <span>{status}</span>
           </div>
-          <h3 className={classes.title}>Submit a style</h3>
+          <h3 className={classes.title}>Train a model from an image</h3>
           <div className={classes.centeredDiv}>
             <TextField
-              label="Name"
+              label="Model name"
               value={name}
               disabled={!image}
               inputRef={input => {
@@ -134,7 +134,7 @@ function SubmitStyle({ classes }) {
                 trainModel(image.file, name)
               }}
             >
-              Train model
+              Train
               <CloudUpload className={classes.rightIcon} />
             </Button>
           </div>
