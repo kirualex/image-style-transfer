@@ -1,6 +1,21 @@
-const { findStyleModels } = require("../models/style")
+const {
+  findStyleModels,
+  findStyleModelById,
+  sfindImages,
+  mapStyleModelToGraphQLType
+} = require("../models/style")
 const events = require("../events")
 const { pubsub } = require("./pubsub")
+
+function onlyIdFieldSelected(selections) {
+  const hasId = selections.some(
+    node =>
+      node.kind === "Field" &&
+      (node.name.value === "id" || node.name.value === "_id")
+  )
+  // length is 2 because of __typename
+  return hasId && selections.length === 2
+}
 
 module.exports = {
   Event: {
@@ -21,9 +36,24 @@ module.exports = {
       }
     }
   },
+  Image: {
+    model: async (root, variables, context, info) => {
+      const modelField = info.fieldNodes.find(
+        node => node.kind === "Field" && node.name.value === "model"
+      )
+      if (onlyIdFieldSelected(modelField.selectionSet.selections)) {
+        return { id: root.modelId }
+      }
+      const model = await findStyleModelById(root.modelId)
+      return mapStyleModelToGraphQLType(model)
+    }
+  },
   Query: {
-    styleModels: async (root, variables, context) => {
+    styleModels: () => {
       return findStyleModels()
+    },
+    styledImages: () => {
+      return findImages("styled")
     }
   },
   Subscription: {

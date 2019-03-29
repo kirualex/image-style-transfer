@@ -188,7 +188,8 @@ app.post("/styleimage", async (req, res) => {
     } catch (e) {
       throw e
     }
-    const { url } = await uploadFile("default", result.file.name, buffer)
+
+    const { url } = await uploadFile(`styled/${modelId}`, result.file.name, buffer)
 
     pubsub.publish("styleTransferEvent", {
       styleTransferEvent: {

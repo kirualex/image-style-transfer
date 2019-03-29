@@ -23,8 +23,8 @@ function getFileExtension(file) {
   return parts.pop()
 }
 
-function getFileURL(fileName, modelName) {
-  return `https://storage.googleapis.com/${bucketName}/${modelName}/${fileName}`
+function getFileURL(fileName) {
+  return `https://storage.googleapis.com/${bucketName}/${fileName}`
 }
 
 function getSourceImageURL(imageFilename) {

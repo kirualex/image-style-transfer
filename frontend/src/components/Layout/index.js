@@ -51,6 +51,12 @@ function Layout({ children, path, classes }) {
             </Link>
             <Link
               getProps={({ isCurrent }) => getLinkClasses(isCurrent, classes)}
+              to="/images"
+            >
+              Images
+            </Link>
+            <Link
+              getProps={({ isCurrent }) => getLinkClasses(isCurrent, classes)}
               to="/train"
             >
               Train model

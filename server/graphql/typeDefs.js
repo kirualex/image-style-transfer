@@ -1,6 +1,13 @@
 const { gql } = require('apollo-server-express')
 
 module.exports = gql`
+  type Image {
+    id: ID!
+    name: String!
+    model: StyleModel!
+    imageURL: String!
+  }
+
   type StyleModel {
     id: ID!
     name: String
@@ -45,6 +52,7 @@ module.exports = gql`
 
   type Query {
     styleModels: [StyleModel!]!
+    styledImages: [Image!]!
   }
 
   type Subscription {

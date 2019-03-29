@@ -94,6 +94,24 @@ async function findStyleModelById(modelId) {
   return styleModel
 }
 
+async function findImages(directory) {
+  const storage = new Storage(gcpOptions)
+  const [files] = await storage.bucket(bucketName).getFiles({
+    directory
+  })
+
+  return files.map(file => {
+    const filePath = file.name.split('/')
+    const fileName = filePath.pop()
+    return {
+      id: file.id,
+      name: fileName,
+      modelId: filePath[1],
+      imageURL: getFileURL(file.name)
+    }
+  })
+}
+
 async function uploadFile(directory, filename, buffer) {
   const storage = new Storage(gcpOptions)
 
@@ -115,7 +133,7 @@ async function uploadFile(directory, filename, buffer) {
 
   console.log(`Made file ${directory}/${bucketImageName} public`)
 
-  return { url: getFileURL(bucketImageName, directory), name: bucketImageName }
+  return { url: getFileURL(`${directory}/${bucketImageName}`), name: bucketImageName }
 }
 
 async function downloadModel(modelId) {
@@ -232,5 +250,6 @@ module.exports = {
   saveStyleModel,
   updateStyleModel,
   downloadModel,
-  uploadFile
+  uploadFile,
+  findImages
 }
