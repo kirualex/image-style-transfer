@@ -4,8 +4,8 @@ module.exports = gql`
   type Image {
     id: ID!
     name: String!
-    model: StyleModel!
     imageURL: String!
+    model: StyleModel
   }
 
   type StyleModel {
@@ -53,6 +53,11 @@ module.exports = gql`
   type Query {
     styleModels: [StyleModel!]!
     styledImages: [Image!]!
+  }
+
+  type Mutation {
+    # Returns the ID if successful
+    removeStyleModel(id: ID!): String
   }
 
   type Subscription {

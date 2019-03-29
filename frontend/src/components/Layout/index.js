@@ -39,7 +39,12 @@ function Layout({ children, path, classes }) {
         <Toolbar className={classes.toolbar}>
           <div>
             <Typography variant="title" color="inherit">
-              <Link to="/" className={`${classes.noTextDecoration} ${classes.link}`}>Transform your image!</Link>
+              <Link
+                to="/"
+                className={`${classes.noTextDecoration} ${classes.link}`}
+              >
+                Transform your image!
+              </Link>
             </Typography>
           </div>
           <div>
@@ -57,9 +62,9 @@ function Layout({ children, path, classes }) {
             </Link>
             <Link
               getProps={({ isCurrent }) => getLinkClasses(isCurrent, classes)}
-              to="/train"
+              to="/styles"
             >
-              Train model
+              Styles
             </Link>
           </div>
         </Toolbar>

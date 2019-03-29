@@ -83,6 +83,7 @@ app.post("/trainmodel", async (req, res) => {
     } catch (e) {
       throw e
     }
+
     const { url, name: imageFilename } = await uploadFile(
       "_model-source-images",
       modelPreviewImageFileName,

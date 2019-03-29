@@ -12,17 +12,7 @@ import ImageSelector from "../ImageSelector"
 import { ImageStoreContext } from "../../stores/ImageStore"
 import { StyleModelStoreContext } from "../../stores/StyleModelStore"
 import { NotificationContext } from "../../lib/notifications/context"
-
-const STYLES_QUERY = gql`
-  query styleModels {
-    styleModels {
-      id
-      name
-      filename
-      imageSrc
-    }
-  }
-`
+import { STYLES_QUERY } from "../../graphql/queries"
 
 const STYLE_TRANSFER_EVENT_SUBSCRIPTION = gql`
   subscription styleTransferEvent {

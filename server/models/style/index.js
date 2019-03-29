@@ -45,15 +45,20 @@ function mapStyleModelToGraphQLType(model) {
 }
 
 async function findStyleModels() {
-  const dataStore = new Datastore(gcpOptions)
-  const query = dataStore.createQuery("StyleModel")
-  const [models] = await dataStore.runQuery(query)
+  try {
+    const dataStore = new Datastore(gcpOptions)
+    const query = dataStore.createQuery("StyleModel")
+    const [models] = await dataStore.runQuery(query)
 
-  if (!models) {
-    return null
+    if (!models) {
+      return null
+    }
+
+    return models.map(model => mapStyleModelToGraphQLType(model))
+  } catch (e) {
+    console.error(e)
+    return []
   }
-
-  return models.map(model => mapStyleModelToGraphQLType(model))
 }
 
 async function saveStyleModel(name) {
@@ -86,35 +91,63 @@ async function updateStyleModel(id, data) {
   return result.indexUpdates > 0
 }
 
-async function findStyleModelById(modelId) {
-  const dataStore = new Datastore(gcpOptions)
-  const id = parseInt(modelId, 10)
-  const key = dataStore.key(["StyleModel", id])
-  const [styleModel] = await dataStore.get(key)
-  return styleModel
+async function removeStyleModel(id) {
+  try {
+    const styleModel = await findStyleModelById(id)
+    if (!styleModel) {
+      return null
+    }
+    const dataStore = new Datastore(gcpOptions)
+    const key = dataStore.key(["StyleModel", parseInt(id, 10)])
+    const [result] = await dataStore.delete(key)
+    if (!result && result.mutationResults[0].indexUpdates === 0) {
+      return null
+    }
+    const success = await removeFile("_models", styleModel.modelFilename)
+    return success ? id : null
+  } catch (e) {
+    console.error(e)
+    return null
+  }
+}
+
+async function findStyleModelById(id) {
+  try {
+    const dataStore = new Datastore(gcpOptions)
+    const key = dataStore.key(["StyleModel", parseInt(id, 10)])
+    const [styleModel] = await dataStore.get(key)
+    return styleModel
+  } catch (e) {
+    console.error(e)
+    return null
+  }
 }
 
 async function findImages(directory) {
-  const storage = new Storage(gcpOptions)
-  const [files] = await storage.bucket(bucketName).getFiles({
-    directory
-  })
+  try {
+    const storage = new Storage(gcpOptions)
+    const [files] = await storage.bucket(bucketName).getFiles({
+      directory
+    })
 
-  return files.map(file => {
-    const filePath = file.name.split('/')
-    const fileName = filePath.pop()
-    return {
-      id: file.id,
-      name: fileName,
-      modelId: filePath[1],
-      imageURL: getFileURL(file.name)
-    }
-  })
+    return files.map(file => {
+      const filePath = file.name.split("/")
+      const fileName = filePath.pop()
+      return {
+        id: file.id,
+        name: fileName,
+        modelId: filePath[1],
+        imageURL: getFileURL(file.name)
+      }
+    })
+  } catch (e) {
+    console.error(e)
+    return []
+  }
 }
 
 async function uploadFile(directory, filename, buffer) {
   const storage = new Storage(gcpOptions)
-
   const bucket = await storage.bucket(bucketName)
   const imageID = generateID()
   const bucketImageName = `${imageID}-${filename}`
@@ -133,7 +166,18 @@ async function uploadFile(directory, filename, buffer) {
 
   console.log(`Made file ${directory}/${bucketImageName} public`)
 
-  return { url: getFileURL(`${directory}/${bucketImageName}`), name: bucketImageName }
+  return {
+    url: getFileURL(`${directory}/${bucketImageName}`),
+    name: bucketImageName
+  }
+}
+
+async function removeFile(directory, filename) {
+  const storage = new Storage(gcpOptions)
+  const bucket = await storage.bucket(bucketName)
+  const file = bucket.file(`${directory}/${filename}`)
+  await file.delete()
+  return true
 }
 
 async function downloadModel(modelId) {
@@ -249,6 +293,7 @@ module.exports = {
   trainModel,
   saveStyleModel,
   updateStyleModel,
+  removeStyleModel,
   downloadModel,
   uploadFile,
   findImages

@@ -2,6 +2,7 @@ const {
   findStyleModels,
   findStyleModelById,
   findImages,
+  removeStyleModel,
   mapStyleModelToGraphQLType
 } = require("../models/style")
 const events = require("../events")
@@ -45,6 +46,9 @@ module.exports = {
         return { id: root.modelId }
       }
       const model = await findStyleModelById(root.modelId)
+      if (!model) {
+        return null
+      }
       return mapStyleModelToGraphQLType(model)
     }
   },
@@ -54,6 +58,11 @@ module.exports = {
     },
     styledImages: () => {
       return findImages("styled")
+    }
+  },
+  Mutation: {
+    removeStyleModel: (root, { id }) => {
+      return removeStyleModel(id)
     }
   },
   Subscription: {

@@ -3,11 +3,12 @@ import { withStyles, TextField, Button } from "@material-ui/core"
 import { CloudUpload } from "@material-ui/icons"
 import gql from "graphql-tag"
 import { Subscription } from "react-apollo"
+import { BarLoader } from "react-spinners"
 
 import ImageSelector from "../ImageSelector"
 import { trainModel, fileToBase64 } from "../../api"
-import { BarLoader } from "react-spinners"
 import { NotificationContext } from "../../lib/notifications/context"
+import { STYLES_QUERY } from "../../graphql/queries"
 
 const MODEL_TRAINING_EVENT_SUBSCRIPTION = gql`
   subscription modelTrainingEvent {
@@ -32,6 +33,21 @@ const MODEL_TRAINING_EVENT_SUBSCRIPTION = gql`
     }
   }
 `
+
+function updateStyleModelQuery(model, client) {
+  try {
+    const { styleModels } = client.readQuery({
+      query: STYLES_QUERY
+    })
+    
+    client.writeQuery({
+      query: STYLES_QUERY,
+      data: { styleModels: [...styleModels, model] }
+    })
+  } catch (e) {
+    console.warn(e)
+  }
+}
 
 const styles = theme => ({
   root: {
@@ -95,10 +111,10 @@ function SubmitStyle({ classes }) {
   return (
     <Subscription
       subscription={MODEL_TRAINING_EVENT_SUBSCRIPTION}
-      onSubscriptionData={result => {
-        const modelTrainingEvent =
-          result.subscriptionData.data.modelTrainingEvent
+      onSubscriptionData={({ client, subscriptionData }) => {
+        const modelTrainingEvent = subscriptionData.data.modelTrainingEvent
         console.log("modelTrainingEvent", modelTrainingEvent)
+
         if (modelTrainingEvent.name === "MODEL_TRAINING_STARTED") {
           notification.show(
             <span>
@@ -119,6 +135,9 @@ function SubmitStyle({ classes }) {
         if (modelTrainingEvent.name === "MODEL_TRAINING_COMPLETED") {
           notification.show(<span>Style model training completed!</span>)
           dispatch({ type: actions.SET_LOADING, isLoading: false })
+          if (modelTrainingEvent.styleModel) {
+            updateStyleModelQuery(modelTrainingEvent.styleModel, client)
+          }
         }
       }}
     >
