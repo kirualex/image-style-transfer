@@ -24,6 +24,12 @@ module.exports = gql`
     imageURL: String!
   }
 
+  type ModelTrainingStartedEvent implements Event {
+    name: String!
+    message: String!
+    iterations: Int!
+  }
+
   type ModelTrainingIterationCompletedEvent implements Event {
     name: String!
     message: String!

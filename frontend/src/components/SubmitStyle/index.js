@@ -6,13 +6,16 @@ import { Subscription } from "react-apollo"
 
 import ImageSelector from "../ImageSelector"
 import { trainModel, fileToBase64 } from "../../api"
-import { BarLoader } from "react-spinners";
+import { BarLoader } from "react-spinners"
 
 const MODEL_TRAINING_EVENT_SUBSCRIPTION = gql`
   subscription modelTrainingEvent {
     modelTrainingEvent {
       name
       message
+      ... on ModelTrainingStartedEvent {
+        iterations
+      }
       ... on ModelTrainingIterationCompletedEvent {
         currentIteration
         maxIterations
@@ -57,15 +60,29 @@ function SubmitStyle({ classes }) {
   const [loading, setLoading] = React.useState(false)
   const [image, selectImage] = React.useState(null)
   const [name, setName] = React.useState("")
+  const [status, setStatus] = React.useState("")
+  const nameInput = React.useRef(null)
 
   return (
     <Subscription
       subscription={MODEL_TRAINING_EVENT_SUBSCRIPTION}
-      onSubscriptionData={({ subscriptionData: { data } }) => {
-        const { modelTrainingEvent } = data
-        console.log("DATA", data)
-        // set loading to false on completed event when it's done
-        if (modelTrainingEvent.currentIteration === modelTrainingEvent.maxIterations) {
+      onSubscriptionData={result => {
+        const modelTrainingEvent =
+          result.subscriptionData.data.modelTrainingEvent
+        console.log("modelTrainingEvent", modelTrainingEvent)
+        if (modelTrainingEvent.name === "MODEL_TRAINING_STARTED") {
+          setStatus(`Iterations completed: 0/${modelTrainingEvent.iterations}`)
+          setLoading(true)
+        }
+        if (modelTrainingEvent.name === "MODEL_TRAINING_ITERATION_COMPLETED") {
+          setStatus(
+            `Iterations completed: ${modelTrainingEvent.currentIteration}/${
+              modelTrainingEvent.maxIterations
+            }`
+          )
+        }
+        if (modelTrainingEvent.name === "MODEL_TRAINING_COMPLETED") {
+          setStatus("Style model training completed!")
           setLoading(false)
         }
       }}
@@ -74,6 +91,7 @@ function SubmitStyle({ classes }) {
         <div className={classes.root}>
           <div className={classes.loadWrapper}>
             {loading && <BarLoader width={100} widthUnit="%" />}
+            <span>{status}</span>
           </div>
           <h3 className={classes.title}>Submit a style</h3>
           <div className={classes.centeredDiv}>
@@ -81,6 +99,9 @@ function SubmitStyle({ classes }) {
               label="Name"
               value={name}
               disabled={!image}
+              inputRef={input => {
+                nameInput.current = input
+              }}
               onChange={e => {
                 const escapedText = e.target.value.replace(
                   /[^a-zA-Z0-9\-_/gi]/,
@@ -98,6 +119,9 @@ function SubmitStyle({ classes }) {
                     file,
                     src: source
                   })
+                  if (!name && nameInput.current) {
+                    nameInput.current.focus()
+                  }
                 })
               }}
             />
@@ -108,7 +132,6 @@ function SubmitStyle({ classes }) {
               className={classes.trainButton}
               onClick={() => {
                 trainModel(image.file, name)
-                  .then(() => setLoading(true))
               }}
             >
               Train model

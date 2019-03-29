@@ -10,9 +10,11 @@ const {
   updateStyleModel,
   stylizeImage,
   uploadFile,
-  trainModel
+  trainModel,
+  findStyleModelById,
+  mapStyleModelToGraphQLType
 } = require("./models/style")
-const { readFile } = require("./models/style/helpers")
+const { readFile, getSourceImageURL } = require("./models/style/helpers")
 const { createGraphQLServer } = require("./graphql")
 const { pubsub } = require("./graphql/pubsub")
 const events = require("./events")
@@ -54,10 +56,13 @@ app.post("/trainmodel", async (req, res) => {
   const { kind, id } = await saveStyleModel(modelName)
   const modelPreviewImageFileName = `${id}.${ext}`
 
-  pubsub.publish('modelTrainingEvent', {
+  const iterations = 2
+
+  pubsub.publish("modelTrainingEvent", {
     modelTrainingEvent: {
       name: events.MODEL_TRAINING_STARTED,
-      message: "Style model training started"
+      message: "Style model training started",
+      iterations
     }
   })
 
@@ -74,21 +79,22 @@ app.post("/trainmodel", async (req, res) => {
       imageBuffer
     )
 
-    const iterations = 5
     const result = await trainModel({
       filePath: file.path,
       modelId: id,
       iterations,
-      onData: data => {
+      onData: async data => {
         const message = data.toString()
         if (message.match(/Training Update/)) {
+          console.log("onData", message)
+
           const rxp = new RegExp(/(Step: .*)/g)
           const [stepsString] = message.match(rxp)
           if (stepsString) {
             let steps = stepsString.replace("Step: ", "")
             steps = parseInt(steps, 10) + 1 //starts from 0
-
-            pubsub.publish('modelTrainingEvent', {
+            
+            pubsub.publish("modelTrainingEvent", {
               modelTrainingEvent: {
                 name: events.MODEL_TRAINING_ITERATION_COMPLETED,
                 currentIteration: steps,
@@ -97,10 +103,6 @@ app.post("/trainmodel", async (req, res) => {
               }
             })
           }
-          console.log("ERR", message)
-        }
-        if (message.match(/train_network:Done/)) {
-          console.log("ERR", message)
         }
       }
     })
@@ -108,13 +110,6 @@ app.post("/trainmodel", async (req, res) => {
     if (!result.success) {
       throw result.err
     }
-
-    pubsub.publish('modelTrainingEvent', {
-      modelTrainingEvent: {
-        name: events.MODEL_TRAINING_COMPLETED,
-        message: "Style model training completed"
-      }
-    })
 
     let modelBuffer
     try {
@@ -134,19 +129,26 @@ app.post("/trainmodel", async (req, res) => {
       imageFilename,
       name: modelName
     })
-    // MODEL_TRAINING_SUCCEEDED
-    // pubsub.publish("styleTransferEvent", {
-    //   styleTransferEvent: {
-    //     name: events.UPLOAD_SUCCEEDED,
-    //     message: "Image upload was successful",
-    //     imageURL
-    //   }
-    // })
+
+    pubsub.publish("modelTrainingEvent", {
+      modelTrainingEvent: {
+        name: events.MODEL_TRAINING_COMPLETED,
+        message: "Style model training completed",
+        styleModel: {
+          id,
+          name: modelName,
+          filename: modelFilename,
+          imageSrc: getSourceImageURL(imageFilename)
+        }
+      }
+    })
+
   } catch (err) {
-    pubsub.publish({
-      trainingEvent: {
+    console.error(err)
+    pubsub.publish(events.MODEL_TRAINING_ERROR, {
+      modelTrainingEvent: {
         name: events.MODEL_TRAINING_ERROR,
-        message: err.message
+        message: 'Unexpected error while training'
       }
     })
   }
@@ -182,7 +184,7 @@ app.post("/styleimage", async (req, res) => {
 
     let buffer
     try {
-      buffer = await readFile(result.file.ath)
+      buffer = await readFile(result.file.path)
     } catch (e) {
       throw e
     }
@@ -196,10 +198,11 @@ app.post("/styleimage", async (req, res) => {
       }
     })
   } catch (err) {
+    console.error(err)
     pubsub.publish("styleTransferEvent", {
       styleTransferEvent: {
         name: events.STYLIZE_ERROR,
-        message: err.message
+        message: 'Unexpected error while stylizing image'
       }
     })
   }

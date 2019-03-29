@@ -13,7 +13,7 @@ const {
   generateID,
   readFile
 } = require("./helpers")
-const events = require('../../events')
+const events = require("../../events")
 const { pubusb } = require("../../graphql/pubsub")
 
 const bucketName = process.env.GCP_BUCKET_NAME
@@ -35,6 +35,15 @@ const gcpOptions = {
   keyFilename: path.resolve(process.cwd(), "general-czar-keyfile.json")
 }
 
+function mapStyleModelToGraphQLType(model) {
+  return {
+    id: model[Datastore.KEY].id,
+    name: model.name,
+    filename: model.modelFilename,
+    imageSrc: getSourceImageURL(model.imageFilename)
+  }
+}
+
 async function findStyleModels() {
   const dataStore = new Datastore(gcpOptions)
   const query = dataStore.createQuery("StyleModel")
@@ -44,14 +53,7 @@ async function findStyleModels() {
     return null
   }
 
-  return models.map(model => {
-    return {
-      id: model[dataStore.KEY].id,
-      name: model.name,
-      filename: model.modelFilename,
-      imageSrc: getSourceImageURL(model.imageFilename)
-    }
-  })
+  return models.map(model => mapStyleModelToGraphQLType(model))
 }
 
 async function saveStyleModel(name) {
@@ -199,10 +201,10 @@ function trainModel({ filePath, modelId, iterations, onData }) {
       iterations
     ])
 
-    let data
-    proc.stdout.on("data", d => {
-      data += d
-    })
+    // let data
+    // proc.stdout.on("data", d => {
+    //   data += d
+    // })
 
     let err
     proc.stderr.on("data", d => {
@@ -223,6 +225,8 @@ function trainModel({ filePath, modelId, iterations, onData }) {
 
 module.exports = {
   findStyleModels,
+  findStyleModelById,
+  mapStyleModelToGraphQLType,
   stylizeImage,
   trainModel,
   saveStyleModel,
