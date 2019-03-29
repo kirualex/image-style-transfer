@@ -11,6 +11,7 @@ import StyleModelSelector from "../StyleModelSelector"
 import ImageSelector from "../ImageSelector"
 import { ImageStoreContext } from "../../stores/ImageStore"
 import { StyleModelStoreContext } from "../../stores/StyleModelStore"
+import { NotificationContext } from "../../lib/notifications/context"
 
 const STYLES_QUERY = gql`
   query styleModels {
@@ -73,9 +74,15 @@ function ImageUploader({ classes }) {
   const [loading, setLoading] = React.useState(false)
   const imageStore = React.useContext(ImageStoreContext)
   const styleModelStore = React.useContext(StyleModelStoreContext)
+  const notification = React.useContext(NotificationContext)
   // Component didn't re-render if an observable value
   // below wasn't referenced above return expression...?
-  const { selectedImage, selectImage, setUploadedImage, uploadedImageURL } = imageStore
+  const {
+    selectedImage,
+    selectImage,
+    setUploadedImage,
+    uploadedImageURL
+  } = imageStore
   const { selectedStyleModel, selectStyleModel } = styleModelStore
 
   return (
@@ -87,13 +94,15 @@ function ImageUploader({ classes }) {
           setUploadedImage(styleTransferEvent.imageURL)
         }
         if (styleTransferEvent.name === "STYLIZE_STARTED") {
+          notification.show(<span>Started stylizing</span>)
           setLoading(true)
         }
-        if (
-          ["UPLOAD_SUCCEEDED", "STYLIZE_ERROR"].includes(
-            styleTransferEvent.name
-          )
-        ) {
+        if (styleTransferEvent.name === "STYLIZE_ERROR") {
+          notification.show(<span>Error while styling the image</span>)
+          setLoading(false)
+        }
+        if (styleTransferEvent.name === "UPLOAD_SUCCEEDED") {
+          notification.show(<span>Image stylizing was successful</span>)
           setLoading(false)
         }
       }}
@@ -135,7 +144,8 @@ function ImageUploader({ classes }) {
               variant="contained"
               component="span"
               disabled={
-                (!selectedImage || !selectedImage.file) ||
+                !selectedImage ||
+                !selectedImage.file ||
                 !selectedStyleModel ||
                 loading
               }
