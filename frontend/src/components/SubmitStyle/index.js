@@ -59,6 +59,7 @@ const styles = theme => ({
 function SubmitStyle({ classes }) {
   const [loading, setLoading] = React.useState(false)
   const [image, selectImage] = React.useState(null)
+  const [iterations, setIterations] = React.useState(5)
   const [name, setName] = React.useState("")
   const [status, setStatus] = React.useState("")
   const nameInput = React.useRef(null)
@@ -110,6 +111,14 @@ function SubmitStyle({ classes }) {
                 setName(escapedText)
               }}
             />
+            <TextField
+              label="Iterations"
+              type="number"
+              value={iterations}
+              onChange={e => {
+                setIterations(e.target.value)
+              }}
+            />
           </div>
           <div className={classes.centeredDiv}>
             <ImageSelector
@@ -131,7 +140,7 @@ function SubmitStyle({ classes }) {
               disabled={!image || !name}
               className={classes.trainButton}
               onClick={() => {
-                trainModel(image.file, name)
+                trainModel({ file: image.file, modelName: name, iterations })
               }}
             >
               Train

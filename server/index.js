@@ -45,7 +45,7 @@ app.use(
 
 app.post("/trainmodel", async (req, res) => {
   const { files, fields } = req
-  const { modelName, fileExtension } = fields
+  const { modelName, iterations, fileExtension } = fields
 
   const { file } = files
   const parts = file.name.split(".")
@@ -55,8 +55,6 @@ app.post("/trainmodel", async (req, res) => {
 
   const { kind, id } = await saveStyleModel(modelName)
   const modelPreviewImageFileName = `${id}.${ext}`
-
-  const iterations = 2
 
   pubsub.publish("modelTrainingEvent", {
     modelTrainingEvent: {

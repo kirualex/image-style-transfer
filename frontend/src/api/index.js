@@ -9,10 +9,11 @@ export const stylizeImage = (file, modelId) => {
     .catch(error => ({ error: true, message: 'Error!' }))
 }
 
-export const trainModel = (file, modelName) => {
+export const trainModel = ({ file, modelName, iterations }) => {
   let data = new FormData()
   data.append('file', file, file.name)
   data.append('modelName', modelName)
+  data.append('iterations', iterations)
 
   return axios.post('http://localhost:3001/trainmodel', data)
     .catch(error => ({ error: true, message: 'Error!' }))
