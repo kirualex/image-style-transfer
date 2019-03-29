@@ -43,10 +43,22 @@ app.use(
   })
 )
 
+// better name pls
+// Force min/max number if the number is over/under
+function getValidIterationNumber(iterations) {
+  if (iterations > 10000) {
+    return 10000
+  }
+  if (iterations < 2) {
+    return 2
+  }
+  return iterations
+}
+
 app.post("/trainmodel", async (req, res) => {
   const { files, fields } = req
-  const { modelName, iterations, fileExtension } = fields
-
+  const { modelName, iterations: iters, fileExtension } = fields
+  const iterations = getValidIterationNumber(iters)
   const { file } = files
   const parts = file.name.split(".")
   const ext = parts[parts.length - 1]
@@ -91,7 +103,7 @@ app.post("/trainmodel", async (req, res) => {
           if (stepsString) {
             let steps = stepsString.replace("Step: ", "")
             steps = parseInt(steps, 10) + 1 //starts from 0
-            
+
             pubsub.publish("modelTrainingEvent", {
               modelTrainingEvent: {
                 name: events.MODEL_TRAINING_ITERATION_COMPLETED,
@@ -140,13 +152,12 @@ app.post("/trainmodel", async (req, res) => {
         }
       }
     })
-
   } catch (err) {
     console.error(err)
     pubsub.publish(events.MODEL_TRAINING_ERROR, {
       modelTrainingEvent: {
         name: events.MODEL_TRAINING_ERROR,
-        message: 'Unexpected error while training'
+        message: "Unexpected error while training"
       }
     })
   }
@@ -187,7 +198,11 @@ app.post("/styleimage", async (req, res) => {
       throw e
     }
 
-    const { url } = await uploadFile(`styled/${modelId}`, result.file.name, buffer)
+    const { url } = await uploadFile(
+      `styled/${modelId}`,
+      result.file.name,
+      buffer
+    )
 
     pubsub.publish("styleTransferEvent", {
       styleTransferEvent: {
@@ -201,7 +216,7 @@ app.post("/styleimage", async (req, res) => {
     pubsub.publish("styleTransferEvent", {
       styleTransferEvent: {
         name: events.STYLIZE_ERROR,
-        message: 'Unexpected error while stylizing image'
+        message: "Unexpected error while stylizing image"
       }
     })
   }

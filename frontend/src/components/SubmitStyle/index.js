@@ -114,6 +114,10 @@ function SubmitStyle({ classes }) {
             <TextField
               label="Iterations"
               type="number"
+              inputProps={{
+                min: 2,
+                max: 10000
+              }}
               value={iterations}
               onChange={e => {
                 setIterations(e.target.value)
