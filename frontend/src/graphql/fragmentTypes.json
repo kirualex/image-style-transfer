@@ -1,1 +1,1 @@
-{"__schema":{"types":[{"kind":"INTERFACE","name":"Event","possibleTypes":[{"name":"GenericEvent"},{"name":"UploadSucceededEvent"},{"name":"ModelTrainingIterationCompletedEvent"},{"name":"ModelTrainingCompletedEvent"}]}]}}
+{"__schema":{"types":[{"kind":"INTERFACE","name":"Event","possibleTypes":[{"name":"GenericEvent"},{"name":"UploadSucceededEvent"},{"name":"ModelTrainingStartedEvent"},{"name":"ModelTrainingIterationCompletedEvent"},{"name":"ModelTrainingCompletedEvent"}]}]}}

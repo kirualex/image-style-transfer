@@ -1,7 +1,7 @@
 const {
   findStyleModels,
   findStyleModelById,
-  sfindImages,
+  findImages,
   mapStyleModelToGraphQLType
 } = require("../models/style")
 const events = require("../events")
